@@ -1,4 +1,4 @@
-# Feature Flags Service
+# Canary - Feature Flags Service
 
 > Multi-tenant feature flag management system built with Laravel 13
 
@@ -7,6 +7,7 @@ A production-ready, enterprise-grade feature flag service with complete multi-te
 ## Features
 
 ### Core Capabilities
+
 - **Multi-Tenancy**: Complete tenant isolation with automatic scoping at database level
 - **Feature Flags**: Create, update, toggle, and delete feature flags per tenant
 - **Targeting Rules**: Enable flags for specific user groups/roles
@@ -15,6 +16,7 @@ A production-ready, enterprise-grade feature flag service with complete multi-te
 - **Web Dashboard**: Modern admin panel built with Blade, Alpine.js, and Tailwind CSS 4
 
 ### Technical Highlights
+
 - **Laravel 13**: Built on the latest Laravel framework
 - **Repository Pattern**: Clean architecture with interfaces and dependency injection
 - **Tenant Scope**: Automatic query filtering using Laravel's Global Scopes
@@ -27,6 +29,7 @@ A production-ready, enterprise-grade feature flag service with complete multi-te
 ## Installation
 
 ### Requirements
+
 - PHP 8.2+
 - MySQL 8.0+ or MariaDB 10.3+
 - Redis 6.0+
@@ -36,24 +39,28 @@ A production-ready, enterprise-grade feature flag service with complete multi-te
 ### Setup
 
 1. **Clone the repository**
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/luqastw/canary
 cd canary
 ```
 
-2. **Install dependencies**
+1. **Install dependencies**
+
 ```bash
 composer install
 npm install
 ```
 
-3. **Configure environment**
+1. **Configure environment**
+
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
 Edit `.env` with your database and Redis credentials:
+
 ```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -69,7 +76,8 @@ REDIS_PORT=6379
 CACHE_STORE=redis
 ```
 
-4. **Start database (if using Docker)**
+1. **Start database (if using Docker)**
+
 ```bash
 docker run -d --name feature-flags-db \
   -e MYSQL_ALLOW_EMPTY_PASSWORD=yes \
@@ -78,28 +86,32 @@ docker run -d --name feature-flags-db \
   mariadb:latest
 ```
 
-5. **Run migrations and seed demo data**
+1. **Run migrations and seed demo data**
+
 ```bash
 php artisan migrate:fresh --seed
 ```
 
 This creates a demo tenant with:
+
 - **Login**: `admin@demo.com` / `password`
 - 5 sample flags
 - 3 user groups
 - Pre-configured targeting rules
 
-6. **Build frontend assets**
+1. **Build frontend assets**
+
 ```bash
 npm run build
 ```
 
-7. **Start the server**
+1. **Start the server**
+
 ```bash
 php artisan serve
 ```
 
-Visit http://localhost:8000 and login with the demo credentials.
+Visit <http://localhost:8000> and login with the demo credentials.
 
 ## Usage
 
@@ -108,6 +120,7 @@ Visit http://localhost:8000 and login with the demo credentials.
 #### Authentication
 
 **Register a new tenant:**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -120,19 +133,21 @@ curl -X POST http://localhost:8000/api/v1/auth/register \
 ```
 
 Response:
+
 ```json
 {
-  "tenant": {
-    "id": 1,
-    "name": "Acme Inc",
-    "email": "admin@acme.com",
-    "status": "active"
-  },
-  "token": "1|abc123..."
+    "tenant": {
+        "id": 1,
+        "name": "Acme Inc",
+        "email": "admin@acme.com",
+        "status": "active"
+    },
+    "token": "1|abc123..."
 }
 ```
 
 **Login:**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -147,6 +162,7 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 All subsequent requests require the `Authorization: Bearer {token}` header.
 
 **Create a flag:**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/flags \
   -H "Authorization: Bearer {token}" \
@@ -160,12 +176,14 @@ curl -X POST http://localhost:8000/api/v1/flags \
 ```
 
 **List all flags:**
+
 ```bash
 curl http://localhost:8000/api/v1/flags \
   -H "Authorization: Bearer {token}"
 ```
 
 **Toggle a flag:**
+
 ```bash
 curl -X PATCH http://localhost:8000/api/v1/flags/{id}/toggle \
   -H "Authorization: Bearer {token}"
@@ -174,6 +192,7 @@ curl -X PATCH http://localhost:8000/api/v1/flags/{id}/toggle \
 #### Groups
 
 **Create a group:**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/groups \
   -H "Authorization: Bearer {token}" \
@@ -188,6 +207,7 @@ curl -X POST http://localhost:8000/api/v1/groups \
 #### Targeting Rules
 
 **Add groups to a flag:**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/targeting \
   -H "Authorization: Bearer {token}" \
@@ -201,6 +221,7 @@ curl -X POST http://localhost:8000/api/v1/targeting \
 #### Flag Evaluation (The Important Part!)
 
 **Evaluate a single flag:**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/evaluate \
   -H "Authorization: Bearer {token}" \
@@ -215,17 +236,19 @@ curl -X POST http://localhost:8000/api/v1/evaluate \
 ```
 
 Response:
+
 ```json
 {
-  "data": {
-    "enabled": true,
-    "reason": "targeting",
-    "variant": null
-  }
+    "data": {
+        "enabled": true,
+        "reason": "targeting",
+        "variant": null
+    }
 }
 ```
 
 **Batch evaluation (multiple flags at once):**
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/evaluate/batch \
   -H "Authorization: Bearer {token}" \
@@ -240,22 +263,23 @@ curl -X POST http://localhost:8000/api/v1/evaluate/batch \
 ```
 
 Response:
+
 ```json
 {
-  "data": {
-    "new-dashboard": {
-      "enabled": true,
-      "reason": "targeting"
-    },
-    "dark-mode": {
-      "enabled": true,
-      "reason": "global"
-    },
-    "ai-features": {
-      "enabled": false,
-      "reason": "global"
+    "data": {
+        "new-dashboard": {
+            "enabled": true,
+            "reason": "targeting"
+        },
+        "dark-mode": {
+            "enabled": true,
+            "reason": "global"
+        },
+        "ai-features": {
+            "enabled": false,
+            "reason": "global"
+        }
     }
-  }
 }
 ```
 
@@ -263,16 +287,16 @@ Response:
 
 The web dashboard provides a user-friendly interface for managing flags, groups, and targeting rules.
 
-**Access:** http://localhost:8000
+**Access:** <http://localhost:8000>
 
-#### Key Features:
+#### Key Features
 
 1. **Dashboard**: Overview with metrics (total flags, active flags, groups)
 2. **Flags Management**:
-   - List all flags with inline toggle
-   - Create/Edit/Delete flags
-   - View flag details with API usage examples
-   - Manage targeting rules per flag
+    - List all flags with inline toggle
+    - Create/Edit/Delete flags
+    - View flag details with API usage examples
+    - Manage targeting rules per flag
 3. **Groups Management**: CRUD operations for user groups
 4. **Targeting Interface**: Visual drag-and-drop style interface for assigning groups to flags
 
@@ -294,6 +318,7 @@ $flags = Flag::all(); // Only returns current tenant's flags
 ### Repository Pattern
 
 Clean separation of concerns:
+
 - **Contracts (Interfaces)**: Define the API contracts
 - **Repositories**: Handle data access and queries
 - **Services**: Implement business logic
@@ -380,33 +405,38 @@ php artisan test --testsuite=Feature
 ### Key Tables
 
 **tenants**
+
 - `id`, `name`, `email`, `status` (active/suspended/deleted)
 
 **flags**
+
 - `id`, `tenant_id`, `key`, `name`, `description`, `is_enabled`
 - Soft deletes enabled
 - Unique constraint on (tenant_id, key)
 
 **groups**
+
 - `id`, `tenant_id`, `identifier`, `name`, `description`
 - Unique constraint on (tenant_id, identifier)
 
 **flag_targeting**
+
 - `id`, `flag_id`, `group_id`
 - Soft deletes enabled
 - Unique constraint on (flag_id, group_id)
 
 **users**
+
 - Standard Laravel users table + `tenant_id`
 - Used for web dashboard authentication
 
 ## API Rate Limits
 
-| Endpoint | Limit | Period |
-|----------|-------|--------|
-| `/api/v1/evaluate` | 1000 requests | per minute |
+| Endpoint                 | Limit         | Period     |
+| ------------------------ | ------------- | ---------- |
+| `/api/v1/evaluate`       | 1000 requests | per minute |
 | `/api/v1/evaluate/batch` | 1000 requests | per minute |
-| All other API endpoints | 60 requests | per minute |
+| All other API endpoints  | 60 requests   | per minute |
 
 ## Security
 
@@ -492,33 +522,6 @@ Potential future enhancements:
 - [ ] **Scheduled Toggles**: Auto-enable/disable at specific times
 - [ ] **Health Checks**: `/health/live` and `/health/ready` endpoints
 
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (follow conventional commits)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
 This project is open-source software licensed under the MIT license.
-
-## Credits
-
-Built with:
-- [Laravel 13](https://laravel.com)
-- [Laravel Sanctum](https://laravel.com/docs/sanctum)
-- [Tailwind CSS 4](https://tailwindcss.com)
-- [Alpine.js](https://alpinejs.dev)
-- [Vite](https://vitejs.dev)
-
-## Support
-
-For issues, questions, or contributions, please open an issue on GitHub.
-
----
-
-**Made with ❤️ using Laravel**
