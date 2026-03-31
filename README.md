@@ -1,5 +1,11 @@
 # Canary - Feature Flags Service
 
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Redis](https://img.shields.io/badge/Redis-6.0%2B-DC382D?logo=redis&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?logo=tailwind-css&logoColor=white)
+
 > Multi-tenant feature flag management system built with Laravel 13
 
 A production-ready, enterprise-grade feature flag service with complete multi-tenancy support. Provides a REST API and modern web dashboard for managing feature flags with role-based targeting, Redis caching for sub-50ms evaluation performance, and complete tenant isolation.
@@ -26,6 +32,22 @@ A production-ready, enterprise-grade feature flag service with complete multi-te
 - **Soft Deletes**: Flags and targeting rules support soft deletion
 - **Transaction Support**: Atomic operations for data consistency
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+  - [REST API](#rest-api)
+  - [Web Dashboard](#web-dashboard)
+  - [Client Integration Examples](#client-integration-examples)
+- [Architecture](#architecture)
+- [Performance](#performance)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Roadmap](#roadmap)
+
 ## Installation
 
 ### Requirements
@@ -45,14 +67,14 @@ git clone https://github.com/luqastw/canary
 cd canary
 ```
 
-1. **Install dependencies**
+2. **Install dependencies**
 
 ```bash
 composer install
 npm install
 ```
 
-1. **Configure environment**
+3. **Configure environment**
 
 ```bash
 cp .env.example .env
@@ -76,7 +98,7 @@ REDIS_PORT=6379
 CACHE_STORE=redis
 ```
 
-1. **Start database (if using Docker)**
+4. **Start database (if using Docker)**
 
 ```bash
 docker run -d --name feature-flags-db \
@@ -86,7 +108,7 @@ docker run -d --name feature-flags-db \
   mariadb:latest
 ```
 
-1. **Run migrations and seed demo data**
+5. **Run migrations and seed demo data**
 
 ```bash
 php artisan migrate:fresh --seed
@@ -99,19 +121,48 @@ This creates a demo tenant with:
 - 3 user groups
 - Pre-configured targeting rules
 
-1. **Build frontend assets**
+6. **Build frontend assets**
 
 ```bash
 npm run build
 ```
 
-1. **Start the server**
+7. **Start the server**
 
 ```bash
 php artisan serve
 ```
 
 Visit <http://localhost:8000> and login with the demo credentials.
+
+## Quick Start
+
+After installation, here's a 2-minute workflow to get started:
+
+```bash
+# 1. Login to get API token
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@demo.com", "password": "password"}'
+
+# Save the token from response
+export TOKEN="your-token-here"
+
+# 2. List existing flags
+curl http://localhost:8000/api/v1/flags \
+  -H "Authorization: Bearer $TOKEN"
+
+# 3. Evaluate a flag (check the demo seeder for available flags)
+curl -X POST http://localhost:8000/api/v1/evaluate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_key": "dark-mode",
+    "context": {"user_id": "user-1", "role": "admin"}
+  }'
+
+# 4. Or use the web dashboard at http://localhost:8000
+```
 
 ## Usage
 
@@ -300,6 +351,172 @@ The web dashboard provides a user-friendly interface for managing flags, groups,
 3. **Groups Management**: CRUD operations for user groups
 4. **Targeting Interface**: Visual drag-and-drop style interface for assigning groups to flags
 
+### Client Integration Examples
+
+Here's how to integrate Canary into your applications:
+
+#### PHP/Laravel Application
+
+```php
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\Http;
+
+class FeatureFlagService
+{
+    private string $baseUrl;
+    private string $token;
+
+    public function __construct()
+    {
+        $this->baseUrl = config('services.canary.url');
+        $this->token = config('services.canary.token');
+    }
+
+    public function isEnabled(string $flagKey, array $context): bool
+    {
+        $response = Http::withToken($this->token)
+            ->post("{$this->baseUrl}/api/v1/evaluate", [
+                'flag_key' => $flagKey,
+                'context' => $context,
+            ]);
+
+        return $response->successful() 
+            ? $response->json('data.enabled', false)
+            : false; // Fail-safe
+    }
+
+    public function evaluateBatch(array $flagKeys, array $context): array
+    {
+        $response = Http::withToken($this->token)
+            ->post("{$this->baseUrl}/api/v1/evaluate/batch", [
+                'flag_keys' => $flagKeys,
+                'context' => $context,
+            ]);
+
+        return $response->successful()
+            ? $response->json('data', [])
+            : [];
+    }
+}
+
+// Usage in your controller
+if ($featureFlags->isEnabled('new-dashboard', ['user_id' => $userId, 'role' => $userRole])) {
+    return view('dashboard.new');
+}
+return view('dashboard.old');
+```
+
+#### JavaScript/Node.js Application
+
+```javascript
+// featureFlags.js
+const axios = require('axios');
+
+class FeatureFlagService {
+  constructor(baseUrl, token) {
+    this.client = axios.create({
+      baseURL: baseUrl,
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  }
+
+  async isEnabled(flagKey, context) {
+    try {
+      const { data } = await this.client.post('/api/v1/evaluate', {
+        flag_key: flagKey,
+        context: context
+      });
+      return data.data.enabled;
+    } catch (error) {
+      console.error('Flag evaluation failed:', error);
+      return false; // Fail-safe
+    }
+  }
+
+  async evaluateBatch(flagKeys, context) {
+    try {
+      const { data } = await this.client.post('/api/v1/evaluate/batch', {
+        flag_keys: flagKeys,
+        context: context
+      });
+      return data.data;
+    } catch (error) {
+      console.error('Batch evaluation failed:', error);
+      return {};
+    }
+  }
+}
+
+// Usage in Express.js
+const flags = new FeatureFlagService(
+  process.env.CANARY_URL, 
+  process.env.CANARY_TOKEN
+);
+
+app.get('/dashboard', async (req, res) => {
+  const enabled = await flags.isEnabled('new-dashboard', {
+    user_id: req.user.id,
+    role: req.user.role
+  });
+  
+  res.render(enabled ? 'dashboard-new' : 'dashboard-old');
+});
+```
+
+#### Python Application
+
+```python
+# feature_flags.py
+import requests
+from typing import Dict, List, Any
+
+class FeatureFlagService:
+    def __init__(self, base_url: str, token: str):
+        self.base_url = base_url
+        self.headers = {"Authorization": f"Bearer {token}"}
+    
+    def is_enabled(self, flag_key: str, context: Dict[str, str]) -> bool:
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/v1/evaluate",
+                json={"flag_key": flag_key, "context": context},
+                headers=self.headers
+            )
+            return response.json()["data"]["enabled"]
+        except Exception as e:
+            print(f"Flag evaluation failed: {e}")
+            return False  # Fail-safe
+    
+    def evaluate_batch(self, flag_keys: List[str], context: Dict[str, str]) -> Dict[str, Any]:
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/v1/evaluate/batch",
+                json={"flag_keys": flag_keys, "context": context},
+                headers=self.headers
+            )
+            return response.json()["data"]
+        except Exception as e:
+            print(f"Batch evaluation failed: {e}")
+            return {}
+
+# Usage in Flask
+flags = FeatureFlagService(
+    os.getenv("CANARY_URL"),
+    os.getenv("CANARY_TOKEN")
+)
+
+@app.route('/dashboard')
+def dashboard():
+    enabled = flags.is_enabled('new-dashboard', {
+        'user_id': current_user.id,
+        'role': current_user.role
+    })
+    return render_template('dashboard_new.html' if enabled else 'dashboard_old.html')
+```
+
 ## Architecture
 
 ### Multi-Tenancy Strategy
@@ -399,6 +616,162 @@ php artisan test --testsuite=Feature
 - **AuthTest**: Registration, login, logout, token validation
 - **FlagTest**: CRUD operations, tenant isolation, toggle
 - **EvaluationTest**: Targeting logic, batch evaluation, fail-safe behavior
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. "Connection refused" when accessing database
+
+**Problem**: Can't connect to MySQL/MariaDB
+
+**Solution**:
+```bash
+# Check if database is running
+docker ps | grep mariadb
+
+# Start database if not running
+docker start feature-flags-db
+
+# Check credentials in .env match your setup
+cat .env | grep DB_
+```
+
+#### 2. "Class 'Redis' not found" or cache errors
+
+**Problem**: Redis extension not installed
+
+**Solution**:
+```bash
+# Install Redis PHP extension
+sudo pecl install redis
+# or via package manager
+sudo apt-get install php8.2-redis  # Debian/Ubuntu
+sudo yum install php82-redis       # CentOS/RHEL
+
+# Verify installation
+php -m | grep redis
+
+# Restart PHP-FPM if needed
+sudo systemctl restart php8.2-fpm
+```
+
+#### 3. Assets not loading (404 on CSS/JS)
+
+**Problem**: Frontend assets not compiled
+
+**Solution**:
+```bash
+# Build assets
+npm run build
+
+# For development with hot reload
+npm run dev
+```
+
+#### 4. "SQLSTATE[42S02]: Base table or view not found"
+
+**Problem**: Database migrations not run
+
+**Solution**:
+```bash
+# Run migrations
+php artisan migrate
+
+# Fresh install with demo data
+php artisan migrate:fresh --seed
+```
+
+#### 5. API returns 401 Unauthorized
+
+**Problem**: Invalid or expired token
+
+**Solution**:
+```bash
+# Generate new token via login
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@demo.com", "password": "password"}'
+
+# Check token is being sent correctly
+curl -v http://localhost:8000/api/v1/flags \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+#### 6. Slow evaluation responses (>100ms)
+
+**Problem**: Redis cache not working or not configured
+
+**Solution**:
+```bash
+# Check Redis is running
+redis-cli ping  # Should return "PONG"
+
+# Verify .env configuration
+CACHE_STORE=redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+
+# Clear config cache
+php artisan config:clear
+php artisan cache:clear
+
+# Test cache manually
+php artisan tinker
+>>> Cache::put('test', 'value', 60);
+>>> Cache::get('test');  // Should return 'value'
+```
+
+#### 7. Tests failing with "Database does not exist"
+
+**Problem**: Test database not configured
+
+**Solution**:
+```bash
+# Create test database
+mysql -u root -e "CREATE DATABASE feature_flags_test;"
+
+# Update .env.testing or phpunit.xml
+DB_DATABASE=feature_flags_test
+
+# Run migrations for test database
+php artisan migrate --env=testing
+
+# Run tests
+php artisan test
+```
+
+#### 8. Multi-tenancy not working (seeing other tenant's data)
+
+**Problem**: TenantScope not applied or middleware issue
+
+**Solution**:
+```php
+// Verify model has TenantScope attribute
+#[ScopedBy([TenantScope::class])]
+class Flag extends Model { ... }
+
+// Check authentication is working
+dd(auth()->user()->tenant_id);
+
+// Manually test scope
+Flag::withoutGlobalScopes()->get(); // All flags (admin only)
+Flag::all(); // Only current tenant's flags
+```
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check logs**: `storage/logs/laravel.log`
+2. **Enable debug mode**: Set `APP_DEBUG=true` in `.env` (development only!)
+3. **Run diagnostics**:
+   ```bash
+   php artisan about
+   php artisan config:show database
+   php artisan route:list
+   ```
+4. **Open an issue**: [GitHub Issues](https://github.com/luqastw/canary/issues)
 
 ## Database Schema
 
@@ -522,6 +895,47 @@ Potential future enhancements:
 - [ ] **Scheduled Toggles**: Auto-enable/disable at specific times
 - [ ] **Health Checks**: `/health/live` and `/health/ready` endpoints
 
+## Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Follow coding standards**: PSR-12, strict types, type hints
+4. **Write tests**: Maintain >80% coverage
+5. **Commit with Conventional Commits**: `feat:`, `fix:`, `docs:`, etc.
+6. **Push to your branch**: `git push origin feature/amazing-feature`
+7. **Open a Pull Request**
+
+### Development Workflow
+
+```bash
+# Install dev dependencies
+composer install
+npm install
+
+# Run tests
+php artisan test
+
+# Code style check (if configured)
+./vendor/bin/phpcs
+
+# Fix code style
+./vendor/bin/phpcbf
+```
+
+## Credits
+
+Built with:
+- [Laravel 13](https://laravel.com) - PHP Framework
+- [Tailwind CSS 4](https://tailwindcss.com) - Utility-first CSS
+- [Alpine.js](https://alpinejs.dev) - Lightweight JavaScript framework
+- [Redis](https://redis.io) - In-memory data store
+
 ## License
 
-This project is open-source software licensed under the MIT license.
+This project is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+---
+
+**Made with ❤️ using Laravel 13**
