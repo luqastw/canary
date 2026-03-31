@@ -67,14 +67,14 @@ git clone https://github.com/luqastw/canary
 cd canary
 ```
 
-2. **Install dependencies**
+1. **Install dependencies**
 
 ```bash
 composer install
 npm install
 ```
 
-3. **Configure environment**
+1. **Configure environment**
 
 ```bash
 cp .env.example .env
@@ -98,7 +98,7 @@ REDIS_PORT=6379
 CACHE_STORE=redis
 ```
 
-4. **Start database (if using Docker)**
+1. **Start database (if using Docker)**
 
 ```bash
 docker run -d --name feature-flags-db \
@@ -108,7 +108,7 @@ docker run -d --name feature-flags-db \
   mariadb:latest
 ```
 
-5. **Run migrations and seed demo data**
+1. **Run migrations and seed demo data**
 
 ```bash
 php artisan migrate:fresh --seed
@@ -121,13 +121,13 @@ This creates a demo tenant with:
 - 3 user groups
 - Pre-configured targeting rules
 
-6. **Build frontend assets**
+1. **Build frontend assets**
 
 ```bash
 npm run build
 ```
 
-7. **Start the server**
+1. **Start the server**
 
 ```bash
 php artisan serve
@@ -383,7 +383,7 @@ class FeatureFlagService
                 'context' => $context,
             ]);
 
-        return $response->successful() 
+        return $response->successful()
             ? $response->json('data.enabled', false)
             : false; // Fail-safe
     }
@@ -413,56 +413,56 @@ return view('dashboard.old');
 
 ```javascript
 // featureFlags.js
-const axios = require('axios');
+const axios = require("axios");
 
 class FeatureFlagService {
-  constructor(baseUrl, token) {
-    this.client = axios.create({
-      baseURL: baseUrl,
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-  }
-
-  async isEnabled(flagKey, context) {
-    try {
-      const { data } = await this.client.post('/api/v1/evaluate', {
-        flag_key: flagKey,
-        context: context
-      });
-      return data.data.enabled;
-    } catch (error) {
-      console.error('Flag evaluation failed:', error);
-      return false; // Fail-safe
+    constructor(baseUrl, token) {
+        this.client = axios.create({
+            baseURL: baseUrl,
+            headers: { Authorization: `Bearer ${token}` },
+        });
     }
-  }
 
-  async evaluateBatch(flagKeys, context) {
-    try {
-      const { data } = await this.client.post('/api/v1/evaluate/batch', {
-        flag_keys: flagKeys,
-        context: context
-      });
-      return data.data;
-    } catch (error) {
-      console.error('Batch evaluation failed:', error);
-      return {};
+    async isEnabled(flagKey, context) {
+        try {
+            const { data } = await this.client.post("/api/v1/evaluate", {
+                flag_key: flagKey,
+                context: context,
+            });
+            return data.data.enabled;
+        } catch (error) {
+            console.error("Flag evaluation failed:", error);
+            return false; // Fail-safe
+        }
     }
-  }
+
+    async evaluateBatch(flagKeys, context) {
+        try {
+            const { data } = await this.client.post("/api/v1/evaluate/batch", {
+                flag_keys: flagKeys,
+                context: context,
+            });
+            return data.data;
+        } catch (error) {
+            console.error("Batch evaluation failed:", error);
+            return {};
+        }
+    }
 }
 
 // Usage in Express.js
 const flags = new FeatureFlagService(
-  process.env.CANARY_URL, 
-  process.env.CANARY_TOKEN
+    process.env.CANARY_URL,
+    process.env.CANARY_TOKEN,
 );
 
-app.get('/dashboard', async (req, res) => {
-  const enabled = await flags.isEnabled('new-dashboard', {
-    user_id: req.user.id,
-    role: req.user.role
-  });
-  
-  res.render(enabled ? 'dashboard-new' : 'dashboard-old');
+app.get("/dashboard", async (req, res) => {
+    const enabled = await flags.isEnabled("new-dashboard", {
+        user_id: req.user.id,
+        role: req.user.role,
+    });
+
+    res.render(enabled ? "dashboard-new" : "dashboard-old");
 });
 ```
 
@@ -477,7 +477,7 @@ class FeatureFlagService:
     def __init__(self, base_url: str, token: str):
         self.base_url = base_url
         self.headers = {"Authorization": f"Bearer {token}"}
-    
+
     def is_enabled(self, flag_key: str, context: Dict[str, str]) -> bool:
         try:
             response = requests.post(
@@ -489,7 +489,7 @@ class FeatureFlagService:
         except Exception as e:
             print(f"Flag evaluation failed: {e}")
             return False  # Fail-safe
-    
+
     def evaluate_batch(self, flag_keys: List[str], context: Dict[str, str]) -> Dict[str, Any]:
         try:
             response = requests.post(
@@ -626,6 +626,7 @@ php artisan test --testsuite=Feature
 **Problem**: Can't connect to MySQL/MariaDB
 
 **Solution**:
+
 ```bash
 # Check if database is running
 docker ps | grep mariadb
@@ -642,6 +643,7 @@ cat .env | grep DB_
 **Problem**: Redis extension not installed
 
 **Solution**:
+
 ```bash
 # Install Redis PHP extension
 sudo pecl install redis
@@ -661,6 +663,7 @@ sudo systemctl restart php8.2-fpm
 **Problem**: Frontend assets not compiled
 
 **Solution**:
+
 ```bash
 # Build assets
 npm run build
@@ -674,6 +677,7 @@ npm run dev
 **Problem**: Database migrations not run
 
 **Solution**:
+
 ```bash
 # Run migrations
 php artisan migrate
@@ -687,6 +691,7 @@ php artisan migrate:fresh --seed
 **Problem**: Invalid or expired token
 
 **Solution**:
+
 ```bash
 # Generate new token via login
 curl -X POST http://localhost:8000/api/v1/auth/login \
@@ -703,6 +708,7 @@ curl -v http://localhost:8000/api/v1/flags \
 **Problem**: Redis cache not working or not configured
 
 **Solution**:
+
 ```bash
 # Check Redis is running
 redis-cli ping  # Should return "PONG"
@@ -727,6 +733,7 @@ php artisan tinker
 **Problem**: Test database not configured
 
 **Solution**:
+
 ```bash
 # Create test database
 mysql -u root -e "CREATE DATABASE feature_flags_test;"
@@ -746,6 +753,7 @@ php artisan test
 **Problem**: TenantScope not applied or middleware issue
 
 **Solution**:
+
 ```php
 // Verify model has TenantScope attribute
 #[ScopedBy([TenantScope::class])]
@@ -766,11 +774,13 @@ If you encounter issues not covered here:
 1. **Check logs**: `storage/logs/laravel.log`
 2. **Enable debug mode**: Set `APP_DEBUG=true` in `.env` (development only!)
 3. **Run diagnostics**:
-   ```bash
-   php artisan about
-   php artisan config:show database
-   php artisan route:list
-   ```
+
+    ```bash
+    php artisan about
+    php artisan config:show database
+    php artisan route:list
+    ```
+
 4. **Open an issue**: [GitHub Issues](https://github.com/luqastw/canary/issues)
 
 ## Database Schema
@@ -880,33 +890,6 @@ SESSION_LIFETIME=120
 - **Readonly Properties**: Used for dependency injection
 - **PHP 8.2+**: Leverages modern PHP features (attributes, enums, etc.)
 
-## Roadmap
-
-Potential future enhancements:
-
-- [ ] **Variants**: A/B testing support (return different values instead of just true/false)
-- [ ] **Percentage Rollouts**: Enable for X% of users
-- [ ] **Audit Log**: Track all flag changes with user attribution
-- [ ] **Webhooks**: Notify external services on flag changes
-- [ ] **SDK**: Client libraries for popular languages
-- [ ] **Analytics**: Flag usage statistics and dashboards
-- [ ] **Environments**: Separate flags for dev/staging/production
-- [ ] **Flag Dependencies**: Require other flags to be enabled
-- [ ] **Scheduled Toggles**: Auto-enable/disable at specific times
-- [ ] **Health Checks**: `/health/live` and `/health/ready` endpoints
-
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Follow coding standards**: PSR-12, strict types, type hints
-4. **Write tests**: Maintain >80% coverage
-5. **Commit with Conventional Commits**: `feat:`, `fix:`, `docs:`, etc.
-6. **Push to your branch**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
-
 ### Development Workflow
 
 ```bash
@@ -924,18 +907,6 @@ php artisan test
 ./vendor/bin/phpcbf
 ```
 
-## Credits
-
-Built with:
-- [Laravel 13](https://laravel.com) - PHP Framework
-- [Tailwind CSS 4](https://tailwindcss.com) - Utility-first CSS
-- [Alpine.js](https://alpinejs.dev) - Lightweight JavaScript framework
-- [Redis](https://redis.io) - In-memory data store
-
 ## License
 
 This project is open-source software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
----
-
-**Made with ❤️ using Laravel 13**
