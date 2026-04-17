@@ -4,7 +4,6 @@
 ![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Redis](https://img.shields.io/badge/Redis-6.0%2B-DC382D?logo=redis&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-38B2AC?logo=tailwind-css&logoColor=white)
 
 > Multi-tenant feature flag management system built with Laravel 13
 
